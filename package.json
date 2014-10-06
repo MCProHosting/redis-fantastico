@@ -1,0 +1,24 @@
+{
+  "name": "redis-fantastico",
+  "version": "0.0.1",
+  "description": "Makes Redis more fantastic, because I said so.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jasmine-node spec/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MCProHosting/redis-fantastico.git"
+  },
+  "author": "Jamy Timmermans <jamyt@mcprohosting.com>",
+  "license": "I dunno, what's a good license?",
+  "bugs": {
+    "url": "https://github.com/MCProHosting/redis-fantastico/issues"
+  },
+  "homepage": "https://github.com/MCProHosting/redis-fantastico",
+  "dependencies": {
+    "brototype": "0.0.2",
+    "lodash": "^2.4.1",
+    "redis": "^0.12.1"
+  }
+}
