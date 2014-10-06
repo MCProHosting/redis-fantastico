@@ -54,14 +54,21 @@ function Fantastico (config) {
             }
         }
 
+        // Pick out all ready connections in the role we're looking for.
         var connections = _.where(self.connections, {role: role, ready: true});
 
+        // Get the next connection in the "round robin" selection.
         typeOffsets[role] = typeOffsets[role] || 0;
         if (connections.length <= typeOffsets[role]) {
             typeOffsets[role] = 0;
         }
 
-        return connections[typeOffsets[role]++];
+        var connection = connections[typeOffsets[role]++];
+
+        // Compact the metadata and connection into a single object. Makes
+        // consuming the library easier without running the risk of overwriting
+        // actual client data in the application.
+        return _.extend({}, connection, connection.client);
     };
 
     /**
