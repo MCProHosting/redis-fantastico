@@ -168,7 +168,7 @@ function getRole (response) {
 }
 
 module.exports = (function () {
-    var instance = new Fantastico();
+    var instance;
 
     return {
         /**
@@ -180,12 +180,15 @@ module.exports = (function () {
             return instance;
         },
         /**
-         * Instantiates and returns a new Fantastico instance.
+         * Instantiates, returns, and swaps in a new Fantastico instance.
          *
+         * @param {{}} config
          * @return {Fantastico}
          */
-        create: function () {
-            return new Fantastico();
+        create: function (config) {
+            instance = new Fantastico(config);
+
+            return instance;
         },
         /**
          * Swaps out the singleton instance.
