@@ -3,7 +3,10 @@ var bro = require('brototype');
 var _ = require('lodash');
 
 function Fantastico (config) {
-    var connections = [];
+    var self = this;
+    var typeOffsets = {};
+
+    self.connections = [];
 
     /**
      * Adds the given config master to start building the Redis "tree".
@@ -17,8 +20,8 @@ function Fantastico (config) {
      *
      * @return {Redis.Client}
      */
-    self.getMaster = function () {
-        return self.findRandom('master', id);
+    self.getMaster = function (id) {
+        return self.findNext('master', id);
     };
 
     /**
@@ -27,27 +30,38 @@ function Fantastico (config) {
      * @return {Redis.Client}
      */
     self.getSlave = function (id) {
-        return self.findRandom('slave', id);
+        return self.findNext('slave', id);
     };
 
     /**
-     * Finds a random instance of a connection with the given role, or attempts
-     * to get the ID if possible.
+     * Finds an instance of a connection with the given role, or attempts
+     * to get the ID if possible. Round-robin selection.
      *
      * @param  {string} role
      * @param  {string} id
      * @return {Redis.Client}
      */
-    self.findRandom = function (role, id) {
+    self.findNext = function (role, id) {
         if (typeof id !== 'undefined') {
-            var c = _.find(connections, {role: role, id: id});
+            var c = _.find(self.connections, {
+                role: role,
+                id: id,
+                ready: true
+            });
 
             if (c) {
                 return c;
             }
         }
 
-        return _.sample(_.where(connections, {role: role}), 1).client;
+        var connections = _.where(self.connections, {role: role, ready: true});
+
+        typeOffsets[role] = typeOffsets[role] || 0;
+        if (connections.length <= typeOffsets[role]) {
+            typeOffsets[role] = 0;
+        }
+
+        return connections[typeOffsets[role]++];
     };
 
     /**
@@ -59,8 +73,8 @@ function Fantastico (config) {
         var connection = {
             port: port,
             host: host,
-            id: [port, host].join(':'),
-            options: options || {},
+            id: [host, port].join(':'),
+            options: config.options || {},
             ready: false,
             client: redis.createClient(port, host, config.options || {})
         };
@@ -68,7 +82,7 @@ function Fantastico (config) {
         // On an error, remove this connection from the array (it's no longer)
         // working, and set a timeout to try to reestablish it.
         connection.client.on('error', function (error) {
-            connections = _.reject(connections, {port: port, host: host});
+            self.connections = _.reject(self.connections, {port: port, host: host});
 
             setTimeout(function () {
                 self.addConnection(port, host);
@@ -80,7 +94,7 @@ function Fantastico (config) {
             pollConnection(connection);
         });
 
-        connections.push(addConnection);
+        self.connections.push(connection);
     };
 
     /**
@@ -89,7 +103,7 @@ function Fantastico (config) {
      * @param  {{}} connection
      */
     function pollConnection (connection) {
-        connection.send_command('ROLE', [], function (err, role) {
+        connection.client.send_command('ROLE', [], function (err, role) {
             // First schedule a new check to run. We want to do this before
             // checking for an error, to monitor if the connection comes back
             // into a healthy state.
@@ -108,16 +122,14 @@ function Fantastico (config) {
             // In this way we kind of build outwards from all masters. If one
             // master is out of date or we add new connections dynamically,
             // we can handle that!
-            if (role.slaves) {
-                _.forEach(role.slaves, function (slave) {
-                    if (!_.find(connections, {
-                        host: slave.host,
-                        port: slave.port
-                    })) {
-                        self.addConnection(slave.host, slave.port);
-                    }
-                });
-            }
+            _.forEach(role.slaves || [], function (slave) {
+                if (typeof _.find(self.connections, {
+                    host: slave.host,
+                    port: slave.port
+                }) === 'undefined') {
+                    self.addConnection(slave.port, slave.host);
+                }
+            });
 
             // The command was successful, so this connection is ready...
             connection.ready = true;
@@ -168,17 +180,7 @@ function getRole (response) {
 }
 
 module.exports = (function () {
-    var instance;
-
-    return {
-        /**
-         * Returns the instance of Fantasico (singleton pattern).
-         *
-         * @return {Fantastico}
-         */
-        instance: function () {
-            return instance;
-        },
+    var output = {
         /**
          * Instantiates, returns, and swaps in a new Fantastico instance.
          *
@@ -186,9 +188,8 @@ module.exports = (function () {
          * @return {Fantastico}
          */
         create: function (config) {
-            instance = new Fantastico(config);
-
-            return instance;
+            output.instance = new Fantastico(config);
+            return output.instance;
         },
         /**
          * Swaps out the singleton instance.
@@ -197,8 +198,12 @@ module.exports = (function () {
          * @return {void}
          */
         swap: function (i) {
-            instance = i;
-        }
+            output.instance = i;
+        },
+
+        class: Fantastico
     };
+
+    return output;
 })();
 
