@@ -58,6 +58,22 @@ describe("Fantastico selections", function () {
         expect(f.getSlave().id).toBe(3);
         expect(f.getSlave().id).toBe(1);
     });
+
+    it("gets master if no available slaves", function () {
+        f.connections = [
+            {role: 'master', id: 1, ready: true},
+            {role: 'slave', id: 2, ready: false},
+            {role: 'slave', id: 3, ready: false}
+        ];
+
+        expect(f.getSlave().id).toBe(1);
+    });
+
+    it("is undefined if no available anythings", function () {
+        f.connections = [];
+
+        expect(f.getSlave()).toBe(undefined);
+    });
 });
 
 describe("Fantastico redis link", function () {

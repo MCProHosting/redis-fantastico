@@ -18,19 +18,20 @@ function Fantastico (config) {
     /**
      * Gets a redis master.
      *
-     * @return {Redis.Client}
+     * @return {Redis.Client|undefined}
      */
     self.getMaster = function (id) {
         return self.findNext('master', id);
     };
 
     /**
-     * Gets a redis slave.
+     * Gets a redis slave. If there are no slaves (single-cluster system, for
+     * example) it'll get a master.
      *
-     * @return {Redis.Client}
+     * @return {Redis.Client|undefined}
      */
     self.getSlave = function (id) {
-        return self.findNext('slave', id);
+        return self.findNext('slave', id) || self.getMaster();
     };
 
     /**
@@ -56,6 +57,11 @@ function Fantastico (config) {
 
         // Pick out all ready connections in the role we're looking for.
         var connections = _.where(self.connections, {role: role, ready: true});
+
+        // If we don't have any connections matching the criteria, be undefined
+        if (connections.length === 0) {
+            return undefined;
+        }
 
         // Get the next connection in the "round robin" selection.
         typeOffsets[role] = typeOffsets[role] || 0;
