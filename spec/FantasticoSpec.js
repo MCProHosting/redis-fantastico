@@ -155,7 +155,7 @@ describe("Fantastico redis link", function () {
 
         it("should poll again", function () {
             expect(commands.length).toBe(1);
-            roleFn(null, {});
+            roleFn(null, []);
 
             jasmine.clock().tick(3);
 
@@ -164,23 +164,31 @@ describe("Fantastico redis link", function () {
 
         it("should set the status to active and extend on success", function () {
             expect(f.connections[0].ready).toBe(false);
-            expect(f.connections[0].foo).toBe(undefined);
-            roleFn(null, {foo: 'bar'});
-            expect(f.connections[0].foo).toBe('bar');
+            expect(f.connections[0].offset).toBe(undefined);
+            roleFn(null, ['master', 1234567890, []]);
+            expect(f.connections[0].offset).toBe(1234567890);
             expect(f.connections[0].ready).toBe(true);
         });
 
         it("should dispatch slaves correctly", function () {
             expect(f.connections.length).toBe(1);
-            roleFn(null, {slaves: [
-                {host: 1, port: 2},
-                {host: 2, port: 3}
-            ]});
+            roleFn(null, [
+                'master',
+                1234567890,
+                [
+                    [1, 2, 1234567890], // Slave {host: 1, port: 2}
+                    [2, 3, 1234567890]  // Slave {host: 2, port: 3}
+                ]
+            ]);
             expect(f.connections.length).toBe(3);
-            roleFn(null, {slaves: [
-                {host: 1, port: 2},
-                {host: 4, port: 5}
-            ]});
+            roleFn(null, [
+                'master',
+                1234567890,
+                [
+                    [1, 2, 1234567890], // Slave {host: 1, port: 2}
+                    [4, 5, 1234567890]  // Slave {host: 4, port: 5}
+                ]
+            ]);
             expect(f.connections.length).toBe(4);
 
             expect(f.connections[1]).toEqual({
