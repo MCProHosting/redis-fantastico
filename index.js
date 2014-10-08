@@ -1,5 +1,4 @@
 var redis = require('redis');
-var bro = require('brototype');
 var _ = require('lodash');
 
 function Fantastico (config) {
