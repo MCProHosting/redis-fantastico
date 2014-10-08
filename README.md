@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/MCProHosting/redis-fantastico.svg)](https://travis-ci.org/MCProHosting/redis-fantastico)
 
-redis-fantastico is a dynamic Redis master-slave client using round robin load balancing. It uses (mranney/node_redis)[https://github.com/mranney/node_redis] and returns node_redis clients.
+redis-fantastico is a dynamic Redis master-slave client using round robin load balancing. It uses [mranney/node_redis](https://github.com/mranney/node_redis) and returns node_redis clients.
 
 ### Usage
 
@@ -19,7 +19,7 @@ fantastico.create({
 });
 
 fantastico.instace.getMaster().SET(['foo', 'bar'], function (err, response) { /* ... */ });
-fantastico.instace.getSlave().SET(['foo', 'bar'], function (err, response) { /* ... */ });
+fantastico.instace.getSlave().GET(['foo'], function (err, response) { /* ... */ });
 
 ```
 
