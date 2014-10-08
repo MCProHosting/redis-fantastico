@@ -17,7 +17,6 @@
   },
   "homepage": "https://github.com/MCProHosting/redis-fantastico",
   "dependencies": {
-    "hiredis": "^0.1.17",
     "lodash": "^2.4.1",
     "redis": "^0.12.1"
   },
