@@ -92,15 +92,25 @@ function Fantastico (config) {
             client: redis.createClient(port, host, config.options || {})
         };
 
-        // On an error, remove this connection from the array (it's no longer)
+        // On an or close, remove this connection from the array (it's no longer)
         // working, and set a timeout to try to reestablish it.
-        connection.client.on('error', function (error) {
+        function reconnect () {
+            // Make sure the connection is closed...
+            try {
+                connection.client.end();
+            } catch (e) {}
+
+            // Remove this from the available connections.
             self.connections = _.reject(self.connections, {port: port, host: host});
 
+            // Wait and reconnect.
             setTimeout(function () {
                 self.addConnection(port, host);
             }, config.check_interval);
-        });
+        }
+
+        connection.client.on('error', reconnect);
+        connection.client.on('end', reconnect);
 
         // When it's connected, poll the connection for informations...
         connection.client.on('connect', function () {

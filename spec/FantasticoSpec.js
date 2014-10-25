@@ -138,6 +138,21 @@ describe("Fantastico redis link", function () {
         expect(creations.length).toBe(2);
     });
 
+    it("should not spam connections if down", function () {
+        expect(creations.length).toBe(1);
+        redis.end = jasmine.createSpy('redis.end');
+        events.error();
+        expect(redis.end).toHaveBeenCalled();
+        jasmine.clock().tick(2);
+        events.error();
+        jasmine.clock().tick(2);
+        events.error();
+        jasmine.clock().tick(20);
+
+        expect(creations.length).toBe(4);
+        expect(f.connections.length).toBe(1);
+    });
+
     describe("polling", function () {
         var roleFn;
         beforeEach(function () {
