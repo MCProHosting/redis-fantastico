@@ -1,5 +1,4 @@
 var redis = require('redis');
-var bro = require('brototype');
 var _ = require('lodash');
 
 function Fantastico (config) {
@@ -135,7 +134,7 @@ function Fantastico (config) {
             }, config.check_interval);
 
             // If there's an error, say this connection is no longer ready.
-            if (err) {
+            if (err && err.message !== "ERR unknown command 'ROLE'") {
                 connection.ready = false;
                 throw err;
             }
@@ -145,6 +144,8 @@ function Fantastico (config) {
             // In this way we kind of build outwards from all masters. If one
             // master is out of date or we add new connections dynamically,
             // we can handle that!
+            role = getRole(role || []);
+
             _.forEach(role.slaves || [], function (slave) {
                 if (typeof _.find(self.connections, {
                     host: slave.host,
@@ -169,7 +170,9 @@ function Fantastico (config) {
  * @return {{}}
  */
 function getRole (response) {
-    var role = {};
+    var role = {
+        role: 'master'
+    };
     switch (response[0]) {
         case 'master':
             role.role = 'master';

@@ -4,7 +4,7 @@
   "description": "Makes Redis more fantastic, because I said so.",
   "main": "index.js",
   "scripts": {
-    "test": "jasmine-node spec/"
+    "test": "node node_modules/jasmine-node/bin/jasmine-node spec/"
   },
   "repository": {
     "type": "git",
@@ -17,8 +17,10 @@
   },
   "homepage": "https://github.com/MCProHosting/redis-fantastico",
   "dependencies": {
-    "brototype": "0.0.2",
     "lodash": "^2.4.1",
     "redis": "^0.12.1"
+  },
+  "devDependencies": {
+    "jasmine-node": "^2.0.0"
   }
 }
