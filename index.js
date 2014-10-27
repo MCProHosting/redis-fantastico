@@ -94,6 +94,10 @@ function Fantastico (config) {
         // On an or close, remove this connection from the array (it's no longer)
         // working, and set a timeout to try to reestablish it.
         function reconnect () {
+            if (connection.killed) {
+                return;
+            }
+
             // Make sure the connection is closed...
             try {
                 connection.client.end();
@@ -101,6 +105,7 @@ function Fantastico (config) {
 
             // Remove this from the available connections.
             self.connections = _.reject(self.connections, {port: port, host: host});
+            connection.killed = true;
 
             // Wait and reconnect.
             setTimeout(function () {
