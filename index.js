@@ -17,6 +17,7 @@ function Fantastico (config) {
     /**
      * Gets a redis master.
      *
+     * @param {Number=} id
      * @return {Redis.Client|undefined}
      */
     self.getMaster = function (id) {
@@ -27,10 +28,32 @@ function Fantastico (config) {
      * Gets a redis slave. If there are no slaves (single-cluster system, for
      * example) it'll get a master.
      *
+     * @param {Number=} id
      * @return {Redis.Client|undefined}
      */
     self.getSlave = function (id) {
         return self.findNext('slave', id) || self.getMaster();
+    };
+
+    /**
+     * Checks out a *new* connection from the type (or duplicates an
+     * existing connect by ID). This is especially useful for long-lived
+     * pubsubs. Note that, at the time of it being returned, the connection
+     * will not have been established yet. Note that this will not add the
+     * new connection to the global connection pool!
+     *
+     * @param  {String} type
+     * @param  {Number} id
+     * @return {Redis.Client}
+     */
+    self.checkout = function (type, id) {
+        var client = self.findNext(type, id);
+
+        return redis.createClient(
+            client.connectionOption.port,
+            client.connectionOption.host,
+            config.options || {}
+        );
     };
 
     /**
@@ -82,14 +105,7 @@ function Fantastico (config) {
      * @return {Redis.Client}
      */
     self.addConnection = function  (port, host) {
-        var connection = {
-            port: port,
-            host: host,
-            id: [host, port].join(':'),
-            options: config.options || {},
-            ready: false,
-            client: redis.createClient(port, host, config.options || {})
-        };
+        var connection = getConnectionRecord(port, host);
 
         // On an or close, remove this connection from the array (it's no longer)
         // working, and set a timeout to try to reestablish it.
@@ -165,6 +181,23 @@ function Fantastico (config) {
             // Update the record to the record data.
             _.extend(connection, role);
         });
+    }
+
+    /**
+     * Gets a connection "record" for usage internally.
+     * @param  {Number} port
+     * @param  {String} host
+     * @return {Object}
+     */
+    function getConnectionRecord (port, host) {
+        return {
+            port: port,
+            host: host,
+            id: [host, port].join(':'),
+            options: config.options || {},
+            ready: false,
+            client: redis.createClient(port, host, config.options || {})
+        };
     }
 }
 

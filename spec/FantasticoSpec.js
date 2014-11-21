@@ -15,7 +15,7 @@ describe("Fantastico selections", function () {
     var f;
 
     beforeEach(function () {
-        f = fantastico.create();
+        f = fantastico.create({});
         f.connections = [
             {role: 'master', id: 0, ready: true},
             {role: 'slave', id: 1, ready: true},
@@ -73,6 +73,19 @@ describe("Fantastico selections", function () {
         f.connections = [];
 
         expect(f.getSlave()).toBe(undefined);
+    });
+
+    it("checks out connections", function () {
+        f.connections.push({
+            role: 'master',
+            id: 10,
+            ready: true,
+            connectionOption: { port: 1234, host: 'localghost' }
+        });
+
+        spyOn(redis, 'createClient').and.returnValue('werks');
+        f.checkout('master', 10);
+        expect(redis.createClient).toHaveBeenCalledWith(1234, 'localghost', {});
     });
 });
 
