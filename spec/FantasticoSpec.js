@@ -42,8 +42,8 @@ describe("Fantastico selections", function () {
     it("selects by id", function () {
         expect(f.findNext('master', 6).id).toBe(6);
         expect(f.getMaster(6).id).toBe(6);
-        expect(f.findNext('slave', 6).id).not.toBe(6);
-        expect(f.getSlave(6).id).not.toBe(6);
+        expect(f.findNext('slave', 6)).toBe(undefined);
+        expect(f.getSlave(6)).toBe(undefined);
     });
 
     it("selects the master correctly", function () {

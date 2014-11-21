@@ -26,13 +26,13 @@ function Fantastico (config) {
 
     /**
      * Gets a redis slave. If there are no slaves (single-cluster system, for
-     * example) it'll get a master.
+     * example) it'll get a master *unless* we requested a specific ID.
      *
      * @param {Number=} id
      * @return {Redis.Client|undefined}
      */
     self.getSlave = function (id) {
-        return self.findNext('slave', id) || self.getMaster();
+        return self.findNext('slave', id) || (typeof id === 'undefined' ? self.getMaster() : undefined);
     };
 
     /**
@@ -65,20 +65,16 @@ function Fantastico (config) {
      * @return {Redis.Client}
      */
     self.findNext = function (role, id) {
-        if (typeof id !== 'undefined') {
-            var c = _.find(self.connections, {
-                role: role,
-                id: id,
-                ready: true
-            });
-
-            if (c) {
-                return c;
-            }
+        // If we defined a role/id, add that to the things we want to pick from.
+        var picks = { ready: true };
+        if (typeof role !== 'undefined') {
+            picks.role = role;
         }
-
+        if (typeof id !== 'undefined') {
+            picks.id = id;
+        }
         // Pick out all ready connections in the role we're looking for.
-        var connections = _.where(self.connections, {role: role, ready: true});
+        var connections = _.where(self.connections, picks);
 
         // If we don't have any connections matching the criteria, be undefined
         if (connections.length === 0) {
